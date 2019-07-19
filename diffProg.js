@@ -70,16 +70,54 @@ function minimize(prog, weightIndexes, learningRate) {
   }
 }
 
+function setTrainingExample(prog, trainingIndexes, trainingExample) {
+  for (let i = 0; i < trainingIndexes.length; i++) {
+    prog.exprs[trainingIndexes[i]].c = trainingExample[i];
+  }
+}
+
+function stochasticGradientDescent(prog, weightIndexes, learningRate, trainingIndexes, trainingExamples) {
+  for (let i = 0; i < 1000; i++) {
+    for (let trainingExample of trainingExamples) {
+      setTrainingExample(prog, trainingIndexes, trainingExample);
+      step(prog, weightIndexes, learningRate);
+    }
+  }
+}
+
 // (w-2)^2
-const exampleProg = new Prog([
-  new ExprConst(5),
-  new ExprConst(2),
-  new ExprConst(-1),
-  new ExprMul(1, 2),
-  new ExprAdd([0, 3]),
-  new ExprMul(4,4)
+// const exampleProg = new Prog([
+//   new ExprConst(5),
+//   new ExprConst(2),
+//   new ExprConst(-1),
+//   new ExprMul(1, 2),
+//   new ExprAdd([0, 3]),
+//   new ExprMul(4,4)
+// ]);
+
+// minimize(exampleProg, [0], 0.01);
+
+// console.log(exampleProg);
+
+const linearProg = new Prog([
+  new ExprConst(5),   // [0] x
+  new ExprConst(45),   // [1] w
+  new ExprMul(0, 1),  // [2] wx (actual)
+  new ExprConst(10),  // [3] expected
+  new ExprConst(-1),  // [4]
+  new ExprMul(3, 4),  // [5] -expected
+  new ExprAdd([2,5]), // [6] actual-expected
+  new ExprMul(6,6),   // [7] (actual-expected)^2
 ]);
 
-minimize(exampleProg, [0], 0.01);
+// minimize(linearProg, [1], 0.01);
 
-console.log(exampleProg);
+// find the slope 3 of a line
+stochasticGradientDescent(linearProg, [1], 0.01, [0, 3], [
+  [0,0],
+  [1,3],
+  [2,6],
+  [3,9],
+]);
+
+console.log(linearProg);
