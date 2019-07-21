@@ -42,6 +42,24 @@ class Prog {
     this.exprs = exprs;
   }
 
+  push(e) {
+    e.index = this.exprs.length;
+    this.exprs.push(e);
+    return e;
+  }
+
+  const(c) {
+    return this.push(new ExprConst(c));
+  }
+
+  mul(e1, e2) {
+    return this.push(new ExprMul(e1.index, e2.index));
+  }
+
+  add(e1, e2) {
+    return this.push(new ExprAdd([e1.index, e2.index]));
+  }
+
   forwardProp() {
     const exprs = this.exprs;
     for (let i in exprs) exprs[i].forwardProp(exprs);
@@ -85,39 +103,52 @@ function stochasticGradientDescent(prog, weightIndexes, learningRate, trainingIn
   }
 }
 
-// (w-2)^2
-// const exampleProg = new Prog([
-//   new ExprConst(5),
-//   new ExprConst(2),
-//   new ExprConst(-1),
-//   new ExprMul(1, 2),
-//   new ExprAdd([0, 3]),
-//   new ExprMul(4,4)
+function square(prog, x) {
+  return prog.mul(x, x);
+}
+
+function sub(prog, a,b) {
+  return prog.add(a, prog.mul(b, prog.const(-1)));
+}
+
+function squareDiff(prog, a, b) {
+  return square(prog, sub(prog, a, b));
+}
+
+// minimize (w-2)^2
+// const prog = new Prog([]);
+// const w = prog.const(50);
+// square(sub(w, prog.const(2)));
+// minimize(prog, [w.index], 0.01);
+// console.log(prog);
+
+const linearProg = new Prog([]);
+const x = linearProg.const(45);
+const w = linearProg.const(5);
+const prediction = linearProg.mul(w,x);
+const target = linearProg.const(10);
+const loss = squareDiff(linearProg, prediction, target);
+
+// minimize(linearProg, [w.index], 0.01);
+// console.log(linearProg);
+
+// const linearProg = new Prog([
+//   new ExprConst(5),   // [0] x
+//   new ExprConst(45),   // [1] w
+//   new ExprMul(0, 1),  // [2] wx (actual)
+//   new ExprConst(10),  // [3] expected
+//   new ExprConst(-1),  // [4]
+//   new ExprMul(3, 4),  // [5] -expected
+//   new ExprAdd([2,5]), // [6] actual-expected
+//   new ExprMul(6,6),   // [7] (actual-expected)^2
 // ]);
 
-// minimize(exampleProg, [0], 0.01);
-
-// console.log(exampleProg);
-
-const linearProg = new Prog([
-  new ExprConst(5),   // [0] x
-  new ExprConst(45),   // [1] w
-  new ExprMul(0, 1),  // [2] wx (actual)
-  new ExprConst(10),  // [3] expected
-  new ExprConst(-1),  // [4]
-  new ExprMul(3, 4),  // [5] -expected
-  new ExprAdd([2,5]), // [6] actual-expected
-  new ExprMul(6,6),   // [7] (actual-expected)^2
-]);
-
-// minimize(linearProg, [1], 0.01);
-
 // find the slope 3 of a line
-stochasticGradientDescent(linearProg, [1], 0.01, [0, 3], [
+stochasticGradientDescent(linearProg, [w.index], 0.01, [x.index, target.index], [
   [0,0],
   [1,3],
   [2,6],
   [3,9],
 ]);
 
-console.log(linearProg);
+console.log(w.val);
