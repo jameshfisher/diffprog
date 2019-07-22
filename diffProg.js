@@ -52,12 +52,20 @@ class Prog {
     return this.push(new ExprConst(c));
   }
 
+  randConst() {
+    return this.const(Math.random());
+  }
+
   mul(e1, e2) {
     return this.push(new ExprMul(e1.index, e2.index));
   }
 
   add(e1, e2) {
     return this.push(new ExprAdd([e1.index, e2.index]));
+  }
+
+  relu(e1) {
+    return this.push(new ExprReLU(e1.index));
   }
 
   forwardProp() {
@@ -122,12 +130,12 @@ function squareDiff(prog, a, b) {
 // minimize(prog, [w.index], 0.01);
 // console.log(prog);
 
-const linearProg = new Prog([]);
-const x = linearProg.const(45);
-const w = linearProg.const(5);
-const prediction = linearProg.mul(w,x);
-const target = linearProg.const(10);
-const loss = squareDiff(linearProg, prediction, target);
+// const linearProg = new Prog([]);
+// const x = linearProg.const(45);
+// const w = linearProg.const(5);
+// const prediction = linearProg.mul(w,x);
+// const target = linearProg.const(10);
+// const loss = squareDiff(linearProg, prediction, target);
 
 // minimize(linearProg, [w.index], 0.01);
 // console.log(linearProg);
@@ -143,12 +151,66 @@ const loss = squareDiff(linearProg, prediction, target);
 //   new ExprMul(6,6),   // [7] (actual-expected)^2
 // ]);
 
-// find the slope 3 of a line
-stochasticGradientDescent(linearProg, [w.index], 0.01, [x.index, target.index], [
-  [0,0],
-  [1,3],
-  [2,6],
-  [3,9],
-]);
+// // find the slope 3 of a line
+// stochasticGradientDescent(linearProg, [w.index], 0.01, [x.index, target.index], [
+//   [0,0],
+//   [1,3],
+//   [2,6],
+//   [3,9],
+// ]);
 
-console.log(w.val);
+// console.log(w.val);
+
+const net = new Prog([]);
+const x = net.const(1.1);
+const y = net.const(1.2);
+const weights = [];
+function addNeuron(inputs) {
+  let s = net.const(0);
+  for (input of inputs) {
+    let w = net.randConst();
+    weights.push(w);
+    s = net.add(s, net.mul(w, x));
+  }
+  let b = net.randConst();
+  s = net.add(s, b);
+  return net.relu(s);
+}
+function addLayer(inputs, n) {
+  const neurons = [];
+  for (let i = 0; i < n; i++) {
+    neurons.push(addNeuron(inputs));
+  }
+  return neurons;
+}
+function addLayers(input, widths) {
+  let acc = input;
+  for (width of widths) {
+    acc = addLayer(acc, width);
+  }
+  return acc;
+}
+let out = addLayers([x,y], [3, 2, 1]);
+
+function oneHot(i, n) {
+  const a = [];
+  for (let i = 0; i < n; i++) {
+    a.push(0);
+  }
+  a[i] = 1;
+  return a;
+}
+
+function trainingData() {
+  const data = [];
+  for (let i = 0; i < 100; i++) {
+    const x = Math.random();
+    const y = Math.random();
+    example = [x, y];
+    // TODO
+    data.push(example);
+  }
+  return data;
+}
+
+console.log(net);
