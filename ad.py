@@ -63,7 +63,7 @@ def backprop(root):
 def diff(f):
   def derivative(*args):
     input_exprs = list(map(ExprConst, args))
-    output_expr = f(*input_exprs)
+    output_expr = const(f(*input_exprs))
     backprop(output_expr)
     return list(map((lambda e: e.der), input_exprs))
   return derivative
@@ -84,3 +84,9 @@ print(square_der_der(-2))
 print(square_der_der(0))
 print(square_der_der(2))
 print(square_der_der(4))
+
+square_der_der_der = diff(lambda x: square_der_der(x)[0])
+print(square_der_der_der(-2))
+print(square_der_der_der(0))
+print(square_der_der_der(2))
+print(square_der_der_der(4))
