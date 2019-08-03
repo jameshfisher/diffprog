@@ -31,21 +31,21 @@ class ExprNeg(Expr):
     super().__init__(deps)
     self.val = -self.deps[0].val
   def backprop(self):
-    self.deps[0].der -= self.der
+    self.deps[0].der = self.deps[0].der - self.der
 class ExprAdd(Expr):
   def __init__(self,deps):
     super().__init__(deps)
     self.val = self.deps[0].val + self.deps[1].val
   def backprop(self):
-    self.deps[0].der += self.der
-    self.deps[1].der += self.der
+    self.deps[0].der = self.deps[0].der + self.der
+    self.deps[1].der = self.deps[1].der + self.der
 class ExprMul(Expr):
   def __init__(self,deps):
     super().__init__(deps)
     self.val = self.deps[0].val * self.deps[1].val
   def backprop(self):
-    self.deps[0].der += self.der * self.deps[1].val
-    self.deps[1].der += self.der * self.deps[0].val
+    self.deps[0].der = (self.deps[1].val * self.der) + self.deps[0].der
+    self.deps[1].der = (self.deps[0].val * self.der) + self.deps[1].der
 
 def backprop(root):
   exprs = set()
@@ -74,8 +74,13 @@ def f(a):
   return square(a-2)
 
 square_der = diff(square)
+print(square_der(-2))
+print(square_der(0))
+print(square_der(2))
+print(square_der(4))
 
-print(f(-2))
-print(f(0))
-print(f(2))
-print(f(4))
+square_der_der = diff(lambda x: square_der(x)[0])
+print(square_der_der(-2))
+print(square_der_der(0))
+print(square_der_der(2))
+print(square_der_der(4))
