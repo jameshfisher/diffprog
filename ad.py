@@ -11,12 +11,44 @@ class Expr:
     return self + (-b)
   def __mul__(self, b):
     return ExprMul([self, const(b)])
+  def __truediv__(self, b):
+    return self * reciprocal(b)
+  def __lt__(self, b):
+    if isinstance(b,Expr):
+      return self.val < b.val
+    return self.val < b
 
 def const(v):
   if type(v) is int or type(v) is float:
     return ExprConst(v)
   else:
     return v
+
+def add(a,b):
+  if isinstance(b, Expr):
+    return b+a
+  return a+b
+def mul(a,b):
+  if isinstance(b, Expr):
+    return b*a
+  return a*b
+def sub(a,b):
+  if isinstance(b, Expr):
+    return (-b)+a
+  return a-b
+def reciprocal(a):
+  if isinstance(a, Expr):
+    return ExprReciprocal([a])
+  if a == 0:
+    return float("inf")
+  return 1/a
+
+def eq(a,b):
+  if isinstance(a, Expr):
+    a = a.val
+  if isinstance(b, Expr):
+    b = b.val
+  return a == b
 
 class ExprConst(Expr):
   def __init__(self, val):
@@ -31,21 +63,29 @@ class ExprNeg(Expr):
     super().__init__(deps)
     self.val = -self.deps[0].val
   def backprop(self):
-    self.deps[0].der = self.deps[0].der - self.der
+    self.deps[0].der = sub(self.deps[0].der, self.der)
 class ExprAdd(Expr):
   def __init__(self,deps):
     super().__init__(deps)
-    self.val = self.deps[0].val + self.deps[1].val
+    self.val = add(self.deps[0].val, self.deps[1].val)
   def backprop(self):
-    self.deps[0].der = self.deps[0].der + self.der
-    self.deps[1].der = self.deps[1].der + self.der
+    self.deps[0].der = add(self.deps[0].der, self.der)
+    self.deps[1].der = add(self.deps[1].der, self.der)
 class ExprMul(Expr):
   def __init__(self,deps):
     super().__init__(deps)
-    self.val = self.deps[0].val * self.deps[1].val
+    self.val = mul(self.deps[0].val, self.deps[1].val)
   def backprop(self):
-    self.deps[0].der = (self.deps[1].val * self.der) + self.deps[0].der
-    self.deps[1].der = (self.deps[0].val * self.der) + self.deps[1].der
+    self.deps[0].der = add(mul(self.deps[1].val, self.der), self.deps[0].der)
+    self.deps[1].der = add(mul(self.deps[0].val, self.der), self.deps[1].der)
+class ExprReciprocal(Expr):
+  def __init__(self,deps):
+    super().__init__(deps)
+    self.val = reciprocal(self.deps[0].val)
+  def backprop(self):
+    self.deps[0].der = add(self.deps[0].der, 
+      mul(self.der,
+        -reciprocal(mul(self.deps[0].val,self.deps[0].val))))
 
 def backprop(root):
   exprs = set()
@@ -60,6 +100,13 @@ def backprop(root):
   for e in sorted(exprs, key=(lambda e: e.height), reverse=True):
     e.backprop()
 
+# Differentiate a function.
+# Input function can take any number of input numbers,
+# and must return a single number.
+# Returns a new function that
+# accepts arguments in the same form,
+# and returns an array of the derivatives of each argument
+# with respect to the single output number.
 def diff(f):
   def derivative(*args):
     input_exprs = list(map(ExprConst, args))
@@ -68,25 +115,8 @@ def diff(f):
     return list(map((lambda e: e.der), input_exprs))
   return derivative
 
-def square(x):
-  return x*x
-def f(a):
-  return square(a-2)
-
-square_der = diff(square)
-print(square_der(-2))
-print(square_der(0))
-print(square_der(2))
-print(square_der(4))
-
-square_der_der = diff(lambda x: square_der(x)[0])
-print(square_der_der(-2))
-print(square_der_der(0))
-print(square_der_der(2))
-print(square_der_der(4))
-
-square_der_der_der = diff(lambda x: square_der_der(x)[0])
-print(square_der_der_der(-2))
-print(square_der_der_der(0))
-print(square_der_der_der(2))
-print(square_der_der_der(4))
+# Special-case of the above, for functions that accept a single number.
+# In this case, the derivative function returns the single derivative,
+# instead of an array of one derivative.
+def diff_single(f):
+  return lambda x: diff(f)(x)[0]
