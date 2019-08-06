@@ -5,6 +5,7 @@ class Expr:
     self.height = max(map((lambda d: d.height), deps)) + 1
   def __neg__(self):
     return ExprNeg([self])
+
   def __add__(self, b):
     return ExprAdd([self, const(b)])
   def __sub__(self, b):
@@ -13,6 +14,16 @@ class Expr:
     return ExprMul([self, const(b)])
   def __truediv__(self, b):
     return self * reciprocal(b)
+  
+  def __radd__(self, a):
+    return ExprAdd([const(a), self])
+  def __rsub__(self, a):
+    return a + (-self)
+  def __rmul__(self, a):
+    return ExprMul([const(a), self])
+  def __rtruediv__(self, a):
+    return a * reciprocal(self)
+
   def __lt__(self, b):
     if isinstance(b,Expr):
       return self.val < b.val

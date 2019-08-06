@@ -1,12 +1,15 @@
 import ad
-import matplotlib.pyplot as plt
 
 def square(x):
   return x*x
 def cube(x):
   return x*x*x
+def pow5(x):
+  return x * x * x * x * x
 def f(a):
   return (cube(a) - square(a-2)*4 + 2) / 10
+def k(x):
+  return x * 2 * pow5(square(x) - 1)
 
 def recip(x):
   return ad.reciprocal(x)
@@ -16,22 +19,19 @@ def relu(x):
     return 0
   return x
 
-square_ = ad.diff_single(square)
-square__ = ad.diff_single(square_)
-square___ = ad.diff_single(square__)
+training_data = [
+  ([3], 11.9),
+  ([2], 8.2),
+  ([-2], -3),
+  ([0], 2.1),
+]
 
-x = [-5+x*0.01 for x in range(1000)]
+def linear_model(slope, intercept, input):
+  return slope*input + intercept
 
-def plot(f, derivatives=4):
-  plot_data = { 'x': x }
-  for i in range(0,derivatives):
-    g = f
-    for j in range(0,i):
-      g = ad.diff_single(g)
-    plot_data['f'+('_'*i)] = list(map(g, x))
-  for i in range(0,derivatives):
-    plt.plot ('x', 'f'+('_'*i), data=plot_data)
-  plt.legend()
-  plt.show()
-
-plot(cube, derivatives=3)
+# def line_error(slope, intercept):
+#   err = 0
+#   for (inputs,target) in training_data:
+#     prediction = 
+#     err = err + square(target-prediction)
+#   return err
